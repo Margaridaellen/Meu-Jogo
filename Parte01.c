@@ -26,7 +26,7 @@ int **criarMatriz(int linhas, int colunas) {
             return NULL;
         }
         for (int j = 0; j < colunas; j++) {
-            matriz[i][j] = GetRandomValue(0, 1);
+            matriz[i][j] = 0;
         }
     }
     return matriz;
@@ -44,7 +44,7 @@ void desenharMatriz(int **matriz, int linhas, int colunas) {
     if (!matriz) return;
     for (int i = 0; i < linhas; i++) {
         for (int j = 0; j < colunas; j++) {
-            Color cor = (matriz[i][j] == 1) ? (Color){20, 40, 70, 255}
+            Color cor = (matriz[i][j] == 1) ? (Color){190, 200, 210, 255}
                                             : (Color){15, 30, 55, 255};
             DrawRectangle(j * TAM_CELULA, i * TAM_CELULA,
                           TAM_CELULA - 2, TAM_CELULA - 2, cor);
@@ -70,7 +70,7 @@ Bola *criarBolas(int quantidade) {
     return bolas;
 }
 
-void atualizarBola(Bola *b) {
+void atualizarBola(Bola *b, int **matriz, int linhas, int colunas, int *contador) {
     b->pos.x += b->vel.x;
     b->pos.y += b->vel.y;
 
@@ -78,6 +78,17 @@ void atualizarBola(Bola *b) {
         b->vel.x *= -1;
     if (b->pos.y - b->raio < 0 || b->pos.y + b->raio > ALTURA_JANELA)
         b->vel.y *= -1;
+
+    int c = (int)(b->pos.x / TAM_CELULA);
+    int l = (int)(b->pos.y / TAM_CELULA);
+   
+
+    if (l >= 0 && l < linhas && c >= 0 && c < colunas) {
+        if (matriz[l][c] == 0) {
+            matriz[l][c] = 1;
+            (*contador)++; 
+        }
+    }
 }
 
 int main(void) {
@@ -95,6 +106,7 @@ int main(void) {
         return -1;
     }
 
+    int celulasVisitadas = 0;
     int quantidadeBolas = 12;
     Bola *bolas = criarBolas(quantidadeBolas);
     if (bolas == NULL) {
@@ -138,12 +150,14 @@ int main(void) {
             desenharMatriz(grade, linhas, colunas);
 
             for (int i = 0; i < quantidadeBolas; i++) {
-                atualizarBola(&bolas[i]);
+                atualizarBola(&bolas[i], grade, linhas, colunas, &celulasVisitadas);
                 DrawCircleV(bolas[i].pos, bolas[i].raio, bolas[i].cor);
             }
 
-            DrawText("Matriz (int**) e vetor de structs (Bola*) alocados com malloc",
-                     10, 10, 18, WHITE);
+            DrawText(TextFormat("Celulas visitadas: %d / %d", celulasVisitadas, linhas * colunas), 10, 10, 20, RED);
+
+            DrawText("Matriz (int**) e vetor de structs (Bola*) alocados com malloc",  10, ALTURA_JANELA - 50, 18, WHITE);
+
             DrawText("Pressione ESC para sair", 10, ALTURA_JANELA - 25, 16, WHITE);
         EndDrawing();
     }
