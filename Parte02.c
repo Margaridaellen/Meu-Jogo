@@ -1,7 +1,7 @@
-
 #include "raylib.h"
 #include <stdlib.h>
 #include <time.h>
+#include <stdbool.h>
 
 #define LARGURA_JANELA 800
 #define ALTURA_JANELA  600
@@ -20,6 +20,7 @@ typedef struct {
     TipoMoeda tipo;
     int       valor;
     bool      coletada;
+    double tempoColeta;
 } Moeda;
 
 
@@ -42,17 +43,17 @@ int valorDaMoeda(TipoMoeda tipo) {
 }
 
 Moeda *criarMoedas(int quantidade) {
-    Moeda *moedas = (Moeda *)malloc(quantidade * sizeof(Moeda));
-    if (moedas == NULL) return NULL;
+     Moeda *moedas = malloc(quantidade * sizeof(Moeda));
 
     for (int i = 0; i < quantidade; i++) {
-        Moeda *m = (moedas + i); // ponteiro para o i-ésimo elemento
+        Moeda *m = (moedas + i); 
         m->pos      = (Vector2){ GetRandomValue(30, LARGURA_JANELA - 30),
                                   GetRandomValue(30, ALTURA_JANELA - 30) };
         m->raio     = 10.0f;
         m->tipo     = (TipoMoeda)GetRandomValue(MOEDA_BRONZE, MOEDA_OURO);
         m->valor    = valorDaMoeda(m->tipo);
         m->coletada = false;
+        m->tempoColeta = 0.0f;
     }
     return moedas;
 }
@@ -67,9 +68,26 @@ bool tentarColetar(Moeda *m, Vector2 posJogador, float raioJogador) {
 
     if (distancia <= somaRaios) {
         m->coletada = true;
+        m->tempoColeta = GetTime();
         return true;
     }
     return false;
+}
+
+void moedaatual(Moeda *moedas, int q) {
+  double tempoAtual = GetTime();
+
+    for (int i = 0; i < q; i++) {
+        Moeda *m = (moedas + i);
+        
+        if (m->coletada && ((tempoAtual - m->tempoColeta) >= 3.0f)) {
+            m->pos = (Vector2){ (float)GetRandomValue(30, LARGURA_JANELA - 30),
+                                (float)GetRandomValue(30, ALTURA_JANELA - 30) };
+            m->tipo     = (TipoMoeda)GetRandomValue(MOEDA_BRONZE, MOEDA_OURO);
+            m->valor    = valorDaMoeda(m->tipo);
+            m->coletada = false;
+        }
+    }
 }
 
 void desenharMoeda(Moeda *m) {
@@ -87,22 +105,34 @@ int main(void) {
     int pontuacao = 0;
 
     Moeda *moedas = criarMoedas(TOTAL_MOEDAS);
+    if (moedas == NULL) {
+        CloseWindow();
+        return 1;
+    }
 
     while (!WindowShouldClose()) {
+    float dt = GetFrameTime();
+    float vel = 250.0f * dt;
 
-        float vel = 250.0f * GetFrameTime();
-        if (IsKeyDown(KEY_RIGHT)) jogador.x += vel;
-        if (IsKeyDown(KEY_LEFT))  jogador.x -= vel;
-        if (IsKeyDown(KEY_UP))    jogador.y -= vel;
-        if (IsKeyDown(KEY_DOWN))  jogador.y += vel;
+     if (IsKeyDown(KEY_RIGHT)) jogador.x += vel;
+     if (IsKeyDown(KEY_LEFT))  jogador.x -= vel;
+     if (IsKeyDown(KEY_UP))    jogador.y -= vel;
+     if (IsKeyDown(KEY_DOWN))  jogador.y += vel;
 
+     if (jogador.x - RAIO_JOGADOR < 0) jogador.x = RAIO_JOGADOR;
+     if (jogador.x + RAIO_JOGADOR > LARGURA_JANELA) jogador.x = LARGURA_JANELA - RAIO_JOGADOR;
+     if (jogador.y - RAIO_JOGADOR < 0) jogador.y = RAIO_JOGADOR;
+     if (jogador.y + RAIO_JOGADOR > ALTURA_JANELA) jogador.y = ALTURA_JANELA - RAIO_JOGADOR;
         
-        for (int i = 0; i < TOTAL_MOEDAS; i++) {
-            Moeda *m = (moedas + i);
-            if (tentarColetar(m, jogador, RAIO_JOGADOR)) {
-                pontuacao += m->valor;
+      for (int i = 0; i < TOTAL_MOEDAS; i++) {
+        Moeda *m = (moedas + i);
+         if (tentarColetar(m, jogador, RAIO_JOGADOR)) {
+            pontuacao += m->valor;
             }
         }
+
+
+        moedaatual(moedas, TOTAL_MOEDAS);
 
         BeginDrawing();
             ClearBackground(RAYWHITE);
@@ -120,7 +150,7 @@ int main(void) {
     }
 
     free(moedas); 
-
     CloseWindow();
+
     return 0;
 }
