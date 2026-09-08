@@ -1,6 +1,5 @@
 #include "raylib.h"
 #include <stdlib.h>
-#include <time.h>
 #include <stdbool.h>
 
 #define LARGURA_JANELA 800
@@ -11,7 +10,8 @@
 typedef enum {
     MOEDA_BRONZE,
     MOEDA_PRATA,
-    MOEDA_OURO
+    MOEDA_OURO, 
+    MOEDA_DIAMANTE
 } TipoMoeda;
 
 typedef struct {
@@ -20,40 +20,51 @@ typedef struct {
     TipoMoeda tipo;
     int       valor;
     bool      coletada;
-    double tempoColeta;
+    double    tempoColeta;
 } Moeda;
-
 
 Color corDaMoeda(TipoMoeda tipo) {
     switch (tipo) {
-        case MOEDA_BRONZE: return (Color){160, 90, 40, 255};
-        case MOEDA_PRATA:  return (Color){190, 190, 190, 255};
-        case MOEDA_OURO:   return GOLD;
-        default:           return WHITE;
+        case MOEDA_BRONZE:   return (Color){160, 90, 40, 255};
+        case MOEDA_PRATA:    return (Color){190, 190, 190, 255};
+        case MOEDA_OURO:     return GOLD;
+        case MOEDA_DIAMANTE: return SKYBLUE;
+        default:             return WHITE;
     }
 }
 
 int valorDaMoeda(TipoMoeda tipo) {
     switch (tipo) {
-        case MOEDA_BRONZE: return 5;
-        case MOEDA_PRATA:  return 10;
-        case MOEDA_OURO:   return 25;
-        default:           return 0;
+        case MOEDA_BRONZE:   return 5;
+        case MOEDA_PRATA:    return 10;
+        case MOEDA_OURO:     return 25;
+        case MOEDA_DIAMANTE: return 50;
+        default:             return 0;
     }
 }
 
+TipoMoeda sortearTipoMoeda(void) {
+    int roll = GetRandomValue(1, 100);
+
+    if (roll <= 10)  return MOEDA_DIAMANTE; 
+    if (roll <= 30)  return MOEDA_OURO;    
+    if (roll <= 60)  return MOEDA_PRATA;   
+    return MOEDA_BRONZE;                  
+}
+
 Moeda *criarMoedas(int quantidade) {
-     Moeda *moedas = malloc(quantidade * sizeof(Moeda));
+    Moeda *moedas = (Moeda *)malloc(quantidade * sizeof(Moeda));
+    if (moedas == NULL) return NULL;
 
     for (int i = 0; i < quantidade; i++) {
         Moeda *m = (moedas + i); 
-        m->pos      = (Vector2){ GetRandomValue(30, LARGURA_JANELA - 30),
-                                  GetRandomValue(30, ALTURA_JANELA - 30) };
+        m->pos      = (Vector2){ (float)GetRandomValue(30, LARGURA_JANELA - 30),
+                                 (float)GetRandomValue(30, ALTURA_JANELA - 30) };
         m->raio     = 10.0f;
-        m->tipo     = (TipoMoeda)GetRandomValue(MOEDA_BRONZE, MOEDA_OURO);
+        m->tipo     = sortearTipoMoeda();
         m->valor    = valorDaMoeda(m->tipo);
         m->coletada = false;
-        m->tempoColeta = 0.0f;
+        m->tempoColeta = 0.0;
     }
     return moedas;
 }
@@ -75,16 +86,16 @@ bool tentarColetar(Moeda *m, Vector2 posJogador, float raioJogador) {
 }
 
 void moedaatual(Moeda *moedas, int q) {
-  double tempoAtual = GetTime();
+    double tempoAtual = GetTime();
 
     for (int i = 0; i < q; i++) {
         Moeda *m = (moedas + i);
         
-        if (m->coletada && ((tempoAtual - m->tempoColeta) >= 3.0f)) {
+        if (m->coletada && ((tempoAtual - m->tempoColeta) >= 3.0)) {
             m->pos = (Vector2){ (float)GetRandomValue(30, LARGURA_JANELA - 30),
                                 (float)GetRandomValue(30, ALTURA_JANELA - 30) };
-            m->tipo     = (TipoMoeda)GetRandomValue(MOEDA_BRONZE, MOEDA_OURO);
-            m->valor    = valorDaMoeda(m->tipo);
+            m->tipo     = sortearTipoMoeda();
+            m->valor    = valorDaMoeda(m->tipo); 
             m->coletada = false;
         }
     }
@@ -96,8 +107,6 @@ void desenharMoeda(Moeda *m) {
 }
 
 int main(void) {
-    srand((unsigned int)time(NULL));
-
     InitWindow(LARGURA_JANELA, ALTURA_JANELA, "Atividade 2 - Enum + Struct + Alocacao Dinamica");
     SetTargetFPS(60);
 
@@ -111,26 +120,25 @@ int main(void) {
     }
 
     while (!WindowShouldClose()) {
-    float dt = GetFrameTime();
-    float vel = 250.0f * dt;
+        float dt = GetFrameTime();
+        float vel = 250.0f * dt;
 
-     if (IsKeyDown(KEY_RIGHT)) jogador.x += vel;
-     if (IsKeyDown(KEY_LEFT))  jogador.x -= vel;
-     if (IsKeyDown(KEY_UP))    jogador.y -= vel;
-     if (IsKeyDown(KEY_DOWN))  jogador.y += vel;
+        if (IsKeyDown(KEY_RIGHT)) jogador.x += vel;
+        if (IsKeyDown(KEY_LEFT))  jogador.x -= vel;
+        if (IsKeyDown(KEY_UP))    jogador.y -= vel;
+        if (IsKeyDown(KEY_DOWN))  jogador.y += vel;
 
-     if (jogador.x - RAIO_JOGADOR < 0) jogador.x = RAIO_JOGADOR;
-     if (jogador.x + RAIO_JOGADOR > LARGURA_JANELA) jogador.x = LARGURA_JANELA - RAIO_JOGADOR;
-     if (jogador.y - RAIO_JOGADOR < 0) jogador.y = RAIO_JOGADOR;
-     if (jogador.y + RAIO_JOGADOR > ALTURA_JANELA) jogador.y = ALTURA_JANELA - RAIO_JOGADOR;
+        if (jogador.x - RAIO_JOGADOR < 0) jogador.x = RAIO_JOGADOR;
+        if (jogador.x + RAIO_JOGADOR > LARGURA_JANELA) jogador.x = LARGURA_JANELA - RAIO_JOGADOR;
+        if (jogador.y - RAIO_JOGADOR < 0) jogador.y = RAIO_JOGADOR;
+        if (jogador.y + RAIO_JOGADOR > ALTURA_JANELA) jogador.y = ALTURA_JANELA - RAIO_JOGADOR;
         
-      for (int i = 0; i < TOTAL_MOEDAS; i++) {
-        Moeda *m = (moedas + i);
-         if (tentarColetar(m, jogador, RAIO_JOGADOR)) {
-            pontuacao += m->valor;
+        for (int i = 0; i < TOTAL_MOEDAS; i++) {
+            Moeda *m = (moedas + i);
+            if (tentarColetar(m, jogador, RAIO_JOGADOR)) {
+                pontuacao += m->valor;
             }
         }
-
 
         moedaatual(moedas, TOTAL_MOEDAS);
 
