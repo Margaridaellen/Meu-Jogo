@@ -113,18 +113,20 @@ Inimigo *encontrarInimigoMaisProximo(Inimigo *vetor, int n, Vector2 posJogador) 
 
 //Nova tarefa/Q2
 Inimigo *encontrarInimigoMaisFraco(Inimigo*vetor, int n){
-Inimigo *ini = NULL;
+Inimigo *maisfraco = NULL;
+int menorvida = 9999;
 
     int j;
        for( j=0;j<n;j++){
            Inimigo *ini = (vetor + j);
            if (ini->estado == INIMIGO_MORTO) continue;
 
-            if(vetor[j].vida < ini->vida){
-              ini= &vetor[j];
-                }
+           if(maisfraco == NULL|| ini->vida < menorvida){
+            maisfraco=ini;
+            menorvida= ini->vida;
+           }
        }
-       return ini;
+       return maisfraco;
 }
 
 void desenharInimigo(Inimigo *ini) {
@@ -156,9 +158,9 @@ int main(void) {
         if (IsKeyDown(KEY_UP))    jogador.y -= vel;
         if (IsKeyDown(KEY_DOWN))  jogador.y += vel;
 
-        if (IsKeyPressed(KEY_DELETE)) {
+        if (IsKeyPressed(KEY_SPACE)) {
             // ponteiro para o inimigo vivo mais próximo (ou NULL)
-            Inimigo *alvo = encontrarInimigoMaisProximo(inimigos, TOTAL_INIMIGOS, jogador);
+            Inimigo *alvo = encontrarInimigoMaisFraco(inimigos, TOTAL_INIMIGOS);
             atingirInimigo(alvo, DANO_TIRO);
         }
 
